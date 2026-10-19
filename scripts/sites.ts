@@ -61,7 +61,11 @@ async function sync(): Promise<void> {
 
 async function buildSite(repo: Repo, deployed: ResSite): Promise<Site> {
   const owner = repoOwner(repo)
-  const [langs, activity] = await Promise.all([gh.langs(repo), gh.activity(repo)])
+  const [langs, activity, traffic] = await Promise.all([
+    gh.langs(repo),
+    gh.activity(repo),
+    gh.traffic(repo),
+  ])
 
   return {
     name: repo.name,
@@ -77,6 +81,8 @@ async function buildSite(repo: Repo, deployed: ResSite): Promise<Site> {
     stars: repo.stargazers_count ?? 0,
     forks: repo.forks_count ?? 0,
     contributors: activity.contributors,
+    trafficViews: traffic.views,
+    trafficClones: traffic.clones,
     createdAt: repo.created_at || null,
     activityAt: latestDate(repo.pushed_at, activity.latestReleaseAt, activity.latestIssueAt),
     screenshot: `screenshots/${screenshotName(owner, repo.name)}`,

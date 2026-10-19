@@ -2,14 +2,16 @@
   import { onMount } from 'svelte'
   import { getGridSize } from '#lib/grid.ts'
   import {
-    SORT_OPTIONS,
     createSiteSearch,
     filterSites,
+    getSortOptions,
     langNames,
+    langUseScores,
     sortSites,
     topicNames,
   } from '#lib/gallery.ts'
   import type {
+    FilterSort,
     GalleryMetadata,
     SecondarySortKey,
     Site,
@@ -28,8 +30,9 @@
   let query = ''
   let selectedLangs: string[] = []
   let selectedTopics: string[] = []
+  let filterSort: FilterSort = 'alphabetical'
   let primarySort: SortKey = 'stars'
-  let secondarySort: SecondarySortKey = 'activityAt'
+  let secondarySort: SecondarySortKey = 'langUse'
   let sortDir: SortDir = 'desc'
   let curPage = 1
   let cols = 1
@@ -39,14 +42,17 @@
   let theme: Theme = 'dark'
 
   const search = createSiteSearch(sites)
-  const langs = langNames(sites)
+  const languageScores = langUseScores(sites)
 
-  $: availTopics = topicNames(sites, selectedLangs)
+  $: langs = langNames(sites, filterSort)
+  $: availTopics = topicNames(sites, selectedLangs, filterSort)
+  $: sortOptions = getSortOptions(sites)
   $: filteredSites = sortSites(
     filterSites(sites, search, query, selectedLangs, selectedTopics),
     primarySort,
     secondarySort,
     sortDir,
+    languageScores,
   )
   $: pageSize = Math.max(1, cols * rows)
   $: pageCount = Math.max(1, Math.ceil(filteredSites.length / pageSize))
@@ -203,11 +209,13 @@
         topics={availTopics}
         {selectedLangs}
         {selectedTopics}
+        sort={filterSort}
+        onSortChange={(val) => (filterSort = val)}
         onLangsChange={setLangs}
         onTopicsChange={setTopics}
       />
       <Sort
-        options={SORT_OPTIONS}
+        options={sortOptions}
         primary={primarySort}
         secondary={secondarySort}
         onPrimaryChange={setPrimary}

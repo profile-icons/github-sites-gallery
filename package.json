@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "A searchable preview gallery of Pages and description-linked deployed sites for owned GitHub repositories using SvelteKit.",
+  "description": "A searchable preview gallery of Pages and description-linked deployed sites for GitHub repositories using SvelteKit.",
   "author": "profile-icons",
   "repository": {
     "type": "git",
@@ -19,15 +19,14 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "data": "tsx scripts/sites.ts",
-    "previews": "tsx scripts/capture.ts",
-    "prepare:data": "npm run data && npm run previews",
+    "prepare:data": "tsx scripts/sites.ts && tsx scripts/capture.ts",
     "dev:all": "npm run prepare:data && npm run dev",
     "build:all": "npm run prepare:data && npm run build",
     "verify": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && biome check .",
     "verify:fix": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && biome check --write ."
   },
   "dependencies": {
+    "clean": "^4.0.2",
     "fuse.js": "^7.5.0"
   },
   "devDependencies": {
@@ -38,10 +37,10 @@
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@types/node": "^26.6.5",
     "octokit": "^5.0.5",
-    "playwright": "^1.64.0",
-    "sass": "^1.105.1",
+    "playwright": "^1.64.1",
+    "sass": "^1.105.2",
     "svelte": "^5.57.2",
-    "svelte-check": "^4.7.6",
+    "svelte-check": "^4.7.7",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "vite": "^8.3.4"

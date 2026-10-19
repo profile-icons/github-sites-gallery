@@ -88,7 +88,7 @@
   .site-card { grid-template-rows: minmax(0, 1fr) minmax(104px, auto); }
   .card-body {
     padding-block: 8px;
-    grid-template-rows: 24px minmax(0, 1fr) 24px;
+    grid-template-rows: auto minmax(0, 1fr) 24px;
     gap: 5px;
   }
 }

@@ -16,6 +16,9 @@
     ? asset(site.screenshot.replace(/^\/+/, '') as Parameters<typeof asset>[0])
     : ''
   $: visLangs = site.languages.slice(0, langLimit)
+  $: nameSeparator = site.fullName.lastIndexOf('/')
+  $: repoOwner = nameSeparator >= 0 ? site.fullName.slice(0, nameSeparator) : ''
+  $: repoName = site.fullName.slice(nameSeparator + 1)
   $: summary = site.description || 'No repository description.'
   $: initials = site.name
     .split(/[-_\s]+/)
@@ -47,25 +50,29 @@
 
 <article class={site.isPrivate ? 'site-card is-private' : 'site-card'}>
   <a class="preview" href={site.siteUrl} target="_blank" rel="noreferrer" aria-label={`Open ${site.fullName}`}>
-    {#if screenshotUrl && !isImgFail}
-      <img
-        src={screenshotUrl}
-        alt={`Preview of ${site.fullName}`}
-        loading="lazy"
-        onerror={() => (isImgFail = true)}
-      />
-    {:else}
-      <div class="preview-fallback" aria-hidden="true">
-        <span>{initials}</span>
-      </div>
-    {/if}
-    <span class="open-badge" aria-hidden="true">↗</span>
+    <div class="preview-image">
+      {#if screenshotUrl && !isImgFail}
+        <img
+          src={screenshotUrl}
+          alt={`Preview of ${site.fullName}`}
+          loading="lazy"
+          onerror={() => (isImgFail = true)}
+        />
+      {:else}
+        <div class="preview-fallback" aria-hidden="true">
+          <span>{initials}</span>
+        </div>
+      {/if}
+    </div>
   </a>
 
   <div class="card-body">
     <div class="title-row">
       <div class="title-copy">
-        <h2 title={site.fullName}>{site.fullName}</h2>
+        <h2 title={site.fullName} aria-label={site.fullName}>
+          {#if repoOwner}<span class="repo-owner">{repoOwner}</span>{/if}
+          <span class="repo-name">{repoName}</span>
+        </h2>
         {#if site.isPrivate}
           <span class="private-badge" title="Private source repository">
             <LockIcon />

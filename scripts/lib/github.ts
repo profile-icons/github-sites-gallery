@@ -23,6 +23,11 @@ export interface RepoActivity {
   readonly latestIssueAt: string | null
 }
 
+export interface RepoTraffic {
+  readonly views: number | null
+  readonly clones: number | null
+}
+
 export class GitHubAPI {
   readonly meter = new MeterAPI()
   readonly #api: Octokit
@@ -177,6 +182,24 @@ export class GitHubAPI {
     }
   }
 
+  async traffic(repo: Repo): Promise<RepoTraffic> {
+    if (this.config.authMode !== 'pat' || !this.#privateAPI) {
+      return { views: null, clones: null }
+    }
+
+    const params = { owner: repoOwner(repo), repo: repo.name }
+    const [views, clones] = await Promise.allSettled([
+      this.#privateAPI.rest.repos.getViews(params),
+      this.#privateAPI.rest.repos.getClones(params),
+    ])
+    reportFail('traffic views', views)
+    reportFail('traffic clones', clones)
+    return {
+      views: validTrafficCount(fulfilledVal(views)?.data.count),
+      clones: validTrafficCount(fulfilledVal(clones)?.data.count),
+    }
+  }
+
   async #contributorCount(repo: Repo, owner: string): Promise<number | null> {
     const res = await this.#repoReq(repo, (client) =>
       client.rest.repos.listContributors({
@@ -245,6 +268,10 @@ export class GitHubAPI {
 
 export function repoOwner(repo: Repo): string {
   return repo.owner?.login || repo.full_name.split('/')[0] || ''
+}
+
+function validTrafficCount(count: number | undefined): number | null {
+  return typeof count === 'number' && Number.isFinite(count) && count >= 0 ? count : null
 }
 
 function errMsg(err: unknown): string {

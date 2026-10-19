@@ -1,6 +1,6 @@
 # GitHub Sites Gallery
 
-A searchable preview gallery of Pages and description-linked deployed sites for owned GitHub repositories.
+A searchable preview gallery of Pages and description-linked deployed sites for GitHub repositories.
 
 An example site is [found here](https://profile-icons.github.io/github-sites-gallery/).
 
@@ -36,7 +36,7 @@ jobs:
     steps:
       - name: Deploy
         id: gallery
-        uses: profile-icons/github-sites-gallery@v1
+        uses: profile-icons/github-sites-gallery@main
         with:
           gh_usernames: ${{ secrets.GH_USERNAMES }}  # optional, eg: 'username,orgA,orgB,...'
           gh_pat: ${{ secrets.GH_PAT }}  # optional: Personal Access Token (PAT)

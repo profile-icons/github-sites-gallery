@@ -1,8 +1,12 @@
 <script lang="ts">
+  import type { FilterSort } from '#lib/types.ts'
+
   export let langs: readonly string[] = []
   export let topics: readonly string[] = []
   export let selectedLangs: readonly string[] = []
   export let selectedTopics: readonly string[] = []
+  export let sort: FilterSort = 'alphabetical'
+  export let onSortChange: (val: FilterSort) => void = () => undefined
   export let onLangsChange: (val: string[]) => void = () => undefined
   export let onTopicsChange: (val: string[]) => void = () => undefined
 
@@ -44,9 +48,25 @@
   <div class="popover-panel filter-panel">
     <div class="popover-head">
       <strong>Filter</strong>
-      {#if selectedCount}
-        <button type="button" class="text-button" onclick={clear}>Clear</button>
-      {/if}
+      <div class="filter-head-actions">
+        {#if selectedCount}
+          <button type="button" class="text-button" onclick={clear}>Clear</button>
+        {/if}
+        <div class="sort-direction" role="group" aria-label="Language and tag order">
+          <button
+            type="button"
+            class:active={sort === 'alphabetical'}
+            aria-pressed={sort === 'alphabetical'}
+            onclick={() => onSortChange('alphabetical')}
+          >Alphabetical</button>
+          <button
+            type="button"
+            class:active={sort === 'usage'}
+            aria-pressed={sort === 'usage'}
+            onclick={() => onSortChange('usage')}
+          >Most used</button>
+        </div>
+      </div>
     </div>
 
     {#if langs.length}

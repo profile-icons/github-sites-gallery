@@ -122,19 +122,19 @@ html[data-theme='light'] {
   }
 
   .site-card {
-    border-color: #cfd6dd;
+    --card-outline: #cfd6dd;
     background: #ffffff;
     box-shadow:
       0 1px 0 rgba(255, 255, 255, .7) inset,
       0 8px 24px rgba(31, 35, 40, .08);
 
-    &:hover { border-color: #aeb7c0; }
-    &.is-private { border-color: #d8b5c0; }
+    &:hover { --card-outline: #aeb7c0; }
+    &.is-private { --card-outline: #d8b5c0; }
   }
 
   .preview {
-    background: #eef1f4;
-    border-color: #cfd6dd;
+    background: #ffffff;
+    border-color: #ffffff;
   }
 
   .preview-fallback {
@@ -143,13 +143,13 @@ html[data-theme='light'] {
   }
 
   .card-body {
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    box-shadow: inset 0 1px 0 rgba(31, 35, 40, .025);
+    background: #ffffff;
 
     p { color: #656d76; }
   }
 
   .title-row h2 { color: #1f2328; }
+  .repo-owner { color: #656d76; }
 
   .repo-link {
     border-color: #d0d7de;

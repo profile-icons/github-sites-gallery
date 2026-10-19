@@ -3,7 +3,7 @@
 
   export let options: readonly SortOption[] = []
   export let primary: SortKey = 'stars'
-  export let secondary: SecondarySortKey = 'activityAt'
+  export let secondary: SecondarySortKey = 'langUse'
   export let dir: SortDir = 'desc'
   export let onPrimaryChange: (val: SortKey) => void = () => undefined
   export let onSecondaryChange: (val: SecondarySortKey) => void = () => undefined
@@ -77,5 +77,12 @@
         {/each}
       </select>
     </label>
+
+    {#if primary === 'langUse' || secondary === 'langUse'}
+      <p class="sort-note">Scores add each language's share of code across the full gallery.</p>
+    {/if}
+    {#if primary === 'trafficT' || secondary === 'trafficT'}
+      <p class="sort-note">Traffic counts repository views over the last 14 days.</p>
+    {/if}
   </div>
 </details>
