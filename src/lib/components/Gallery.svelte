@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { t } from '#lib/i18n/index.ts'
+  import ButtonLocale from './ButtonLocale.svelte'
   import { getGridSize } from '#lib/grid.ts'
   import {
     createSiteSearch,
@@ -61,8 +63,8 @@
   $: activeFilterCount = selectedLangs.length + selectedTopics.length
   $: profileName = metadata.profile.name || metadata.profile.login || 'GitHub'
   $: rangeLbl = filteredSites.length
-    ? `${pageStart + 1}–${Math.min(pageStart + pageSize, filteredSites.length)} of ${filteredSites.length}`
-    : '0 sites'
+    ? $t('range', { start: pageStart + 1, end: Math.min(pageStart + pageSize, filteredSites.length), total: filteredSites.length })
+    : $t('zeroSites')
   $: filterKey = [query, selectedLangs.join('|'), selectedTopics.join('|'), primarySort, secondarySort, sortDir].join('::')
   $: if (filterKey !== lastFilterKey) {
     lastFilterKey = filterKey
@@ -158,13 +160,13 @@
         href={metadata.profile.profileUrl}
         target="_blank"
         rel="noreferrer"
-        aria-label={`Open ${profileName} on GitHub`}
+        aria-label={$t('openGithub', { name: profileName })}
       >
         <img class="brand-avatar" src={metadata.profile.avatarUrl} alt="" width="34" height="34" />
       </a>
       <div>
-        <h1><span class="profile-name">{profileName}'s</span> Sites</h1>
-        <span>{sites.length} deployed repositories</span>
+        <h1>{$t('pageTitle', { name: profileName })}</h1>
+        <span>{$t('deployed', { count: sites.length })}</span>
       </div>
     </div>
 
@@ -172,12 +174,13 @@
       <button
         type="button"
         class="header-icon-button"
-        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-        title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+        aria-label={$t(theme === 'dark' ? 'switchLight' : 'switchDark')}
+        title={$t(theme === 'dark' ? 'lightMode' : 'darkMode')}
         onclick={toggleTheme}
       >
         <Octicon name={theme === 'dark' ? 'sun' : 'moon'} />
       </button>
+      <ButtonLocale />
 
       {#if metadata.srcRepoUrl}
         <a
@@ -185,8 +188,8 @@
           href={metadata.srcRepoUrl}
           target="_blank"
           rel="noreferrer"
-          aria-label="Open this site's source repository on GitHub"
-          title="GitHub repository"
+          aria-label={$t('openSource')}
+          title={$t('githubRepository')}
         >
           <Octicon name="mark-github" />
         </a>
@@ -194,12 +197,12 @@
     </div>
   </header>
 
-  <section class="toolbar" aria-label="Search, filter and sort">
+  <section class="toolbar" aria-label={$t('toolbar')}>
     <label class="search-box">
       <span aria-hidden="true">⌕</span>
-      <input bind:value={query} type="search" placeholder="Search sites…" aria-label="Search sites" />
+      <input bind:value={query} type="search" placeholder={$t('searchSitesPlaceholder')} aria-label={$t('searchSites')} />
       {#if query}
-        <button type="button" class="input-clear" aria-label="Clear search" onclick={() => (query = '')}>×</button>
+        <button type="button" class="input-clear" aria-label={$t('clearSearch')} onclick={() => (query = '')}>×</button>
       {/if}
     </label>
 
@@ -224,7 +227,7 @@
         onDirChange={setDir}
       />
       {#if activeFilterCount || query}
-        <button type="button" class="clear-compact" onclick={clearAll} aria-label="Clear search and filters">×</button>
+        <button type="button" class="clear-compact" onclick={clearAll} aria-label={$t('clearAll')}>×</button>
       {/if}
     </div>
   </section>
@@ -238,19 +241,19 @@
       </div>
     {:else}
       <div class="empty-state">
-        <strong>No matching sites</strong>
-        <span>Change the search or filters.</span>
-        <button type="button" class="control-button" onclick={clearAll}>Clear</button>
+        <strong>{$t('noSites')}</strong>
+        <span>{$t('adjustFilters')}</span>
+        <button type="button" class="control-button" onclick={clearAll}>{$t('clear')}</button>
       </div>
     {/if}
   </section>
 
   <footer class="pagination-bar">
     <span class="result-count">{rangeLbl}</span>
-    <nav class="pager" aria-label="Pagination">
-      <button type="button" disabled={curPage === 1} aria-label="Previous page" onclick={() => go(curPage - 1)}>←</button>
+    <nav class="pager" aria-label={$t('pagination')}>
+      <button type="button" disabled={curPage === 1} aria-label={$t('previousPage')} onclick={() => go(curPage - 1)}>←</button>
       <span class="page-indicator">{curPage} / {pageCount}</span>
-      <button type="button" disabled={curPage === pageCount} aria-label="Next page" onclick={() => go(curPage + 1)}>→</button>
+      <button type="button" disabled={curPage === pageCount} aria-label={$t('nextPage')} onclick={() => go(curPage + 1)}>→</button>
     </nav>
     <span class="capacity">{cols}×{rows}</span>
   </footer>

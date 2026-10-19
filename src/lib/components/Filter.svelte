@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '#lib/i18n/index.ts'
   import type { FilterSort } from '#lib/types.ts'
 
   export let langs: readonly string[] = []
@@ -37,9 +38,9 @@
 </script>
 
 <details name="gallery-tools" class="popover filter-popover">
-  <summary class="control-button" aria-label="Filter sites">
+  <summary class="control-button" aria-label={$t('filterSites')}>
     <span aria-hidden="true">⌁</span>
-    <span class="control-label">Filter</span>
+    <span class="control-label">{$t('filter')}</span>
     {#if selectedCount}
       <span class="count-badge">{selectedCount}</span>
     {/if}
@@ -47,37 +48,37 @@
 
   <div class="popover-panel filter-panel">
     <div class="popover-head">
-      <strong>Filter</strong>
+      <strong>{$t('filter')}</strong>
       <div class="filter-head-actions">
         {#if selectedCount}
-          <button type="button" class="text-button" onclick={clear}>Clear</button>
+          <button type="button" class="text-button" onclick={clear}>{$t('clear')}</button>
         {/if}
-        <div class="sort-direction" role="group" aria-label="Language and tag order">
+        <div class="sort-direction" role="group" aria-label={$t('filterOrder')}>
           <button
             type="button"
             class:active={sort === 'alphabetical'}
             aria-pressed={sort === 'alphabetical'}
             onclick={() => onSortChange('alphabetical')}
-          >Alphabetical</button>
+          >{$t('alphabetical')}</button>
           <button
             type="button"
             class:active={sort === 'usage'}
             aria-pressed={sort === 'usage'}
             onclick={() => onSortChange('usage')}
-          >Most used</button>
+          >{$t('mostUsed')}</button>
         </div>
       </div>
     </div>
 
     {#if langs.length}
       <fieldset class="filter-group">
-        <legend class="sr-only">Languages</legend>
+        <legend class="sr-only">{$t('languages')}</legend>
         <div class="filter-group-head">
-          <span class="filter-group-title">Languages</span>
+          <span class="filter-group-title">{$t('languages')}</span>
           <span class="filter-group-line" aria-hidden="true"></span>
           <label class="filter-option-search">
-            <span class="sr-only">Search languages</span>
-            <input bind:value={langQuery} type="search" placeholder="Search" aria-label="Search languages" />
+            <span class="sr-only">{$t('searchLanguages')}</span>
+            <input bind:value={langQuery} type="search" placeholder={$t('search')} aria-label={$t('searchLanguages')} />
           </label>
         </div>
         {#if filteredLangs.length}
@@ -92,20 +93,20 @@
             {/each}
           </div>
         {:else}
-          <div class="empty-options compact">No matching languages.</div>
+          <div class="empty-options compact">{$t('noMatchingLanguages')}</div>
         {/if}
       </fieldset>
     {/if}
 
     {#if topics.length}
       <fieldset class="filter-group">
-        <legend class="sr-only">Tags</legend>
+        <legend class="sr-only">{$t('tags')}</legend>
         <div class="filter-group-head">
-          <span class="filter-group-title">Tags</span>
+          <span class="filter-group-title">{$t('tags')}</span>
           <span class="filter-group-line" aria-hidden="true"></span>
           <label class="filter-option-search">
-            <span class="sr-only">Search tags</span>
-            <input bind:value={topicQuery} type="search" placeholder="Search" aria-label="Search tags" />
+            <span class="sr-only">{$t('searchTags')}</span>
+            <input bind:value={topicQuery} type="search" placeholder={$t('search')} aria-label={$t('searchTags')} />
           </label>
         </div>
         {#if filteredTopics.length}
@@ -120,13 +121,13 @@
             {/each}
           </div>
         {:else}
-          <div class="empty-options compact">No matching tags.</div>
+          <div class="empty-options compact">{$t('noTags')}</div>
         {/if}
       </fieldset>
     {/if}
 
     {#if !langs.length && !topics.length}
-      <div class="empty-options">No filter metadata is available.</div>
+      <div class="empty-options">{$t('noMetadata')}</div>
     {/if}
   </div>
 </details>

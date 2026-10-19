@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { type MsgKey, t } from '#lib/i18n/index.ts'
   import type { SecondarySortKey, SortDir, SortKey, SortOption } from '#lib/types.ts'
 
   export let options: readonly SortOption[] = []
@@ -9,9 +10,10 @@
   export let onSecondaryChange: (val: SecondarySortKey) => void = () => undefined
   export let onDirChange: (val: SortDir) => void = () => undefined
 
-  $: primaryLbl = options.find((option) => option.val === primary)?.shortLbl
-    ?? options.find((option) => option.val === primary)?.lbl
-    ?? 'Sort'
+  const labels: Record<SortKey, MsgKey> = { stars: 'stars', forks: 'forks', contributors: 'contributors', activityAt: 'activity', createdAt: 'created', langUse: 'languages', trafficT: 'traffic' }
+  $: primaryLbl = options.some((option) => option.val === primary)
+    ? $t(primary === 'contributors' ? 'contributorsShort' : labels[primary])
+    : $t('sort')
 
   function selectVal(event: Event): string {
     return event.currentTarget instanceof HTMLSelectElement ? event.currentTarget.value : ''
@@ -35,54 +37,54 @@
 </script>
 
 <details name="gallery-tools" class="popover sort-popover">
-  <summary class="control-button" aria-label="Sort sites">
+  <summary class="control-button" aria-label={$t('sortSites')}>
     <span aria-hidden="true">⇅</span>
     <span class="control-label">{primaryLbl}</span>
   </summary>
 
   <div class="popover-panel sort-panel">
     <div class="popover-head">
-      <strong>Sort</strong>
-      <div class="sort-direction" role="group" aria-label="Sort direction">
+      <strong>{$t('sort')}</strong>
+      <div class="sort-direction" role="group" aria-label={$t('sortDirection')}>
         <button
           type="button"
           class:active={dir === 'asc'}
           aria-pressed={dir === 'asc'}
           onclick={() => onDirChange('asc')}
-        >Ascending</button>
+        >{$t('ascending')}</button>
         <button
           type="button"
           class:active={dir === 'desc'}
           aria-pressed={dir === 'desc'}
           onclick={() => onDirChange('desc')}
-        >Descending</button>
+        >{$t('descending')}</button>
       </div>
     </div>
 
     <label class="sort-field">
-      <span>PRIMARY</span>
+      <span>{$t('primary')}</span>
       <select value={primary} onchange={changePrimary}>
         {#each options as option (option.val)}
-          <option value={option.val}>{option.lbl}</option>
+          <option value={option.val}>{$t(labels[option.val])}</option>
         {/each}
       </select>
     </label>
 
     <label class="sort-field">
-      <span>SECONDARY</span>
+      <span>{$t('secondary')}</span>
       <select value={secondary} onchange={changeSecondary}>
-        <option value="none">None</option>
+        <option value="none">{$t('none')}</option>
         {#each options.filter((option) => option.val !== primary) as option (option.val)}
-          <option value={option.val}>{option.lbl}</option>
+          <option value={option.val}>{$t(labels[option.val])}</option>
         {/each}
       </select>
     </label>
 
     {#if primary === 'langUse' || secondary === 'langUse'}
-      <p class="sort-note">Scores add each language's share of code across the full gallery.</p>
+      <p class="sort-note"></p>
     {/if}
     {#if primary === 'trafficT' || secondary === 'trafficT'}
-      <p class="sort-note">Traffic counts repository views over the last 14 days.</p>
+      <p class="sort-note"></p>
     {/if}
   </div>
 </details>
