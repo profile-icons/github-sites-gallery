@@ -8,7 +8,6 @@ export type TranslationParams = Readonly<Record<string, string | number>>
 export type Translator = (key: MsgKey, params?: TranslationParams) => string
 type LocaleLoader = () => Promise<Msgs>
 
-export const STORAGE_KEY: string = 'gallery-locale'
 const modules: Record<string, LocaleLoader> = import.meta.glob<Msgs>(
   ['./locales/*.json', '!./locales/en.json'],
   {
@@ -26,26 +25,7 @@ const curLocale: Writable<Locale> = writable<Locale>('en')
 export const locale: Readable<Locale> = { subscribe: curLocale.subscribe }
 const dicts: Map<Locale, Msgs> = new Map<Locale, Msgs>([['en', eng]])
 const pending: Map<Locale, Promise<Msgs>> = new Map<Locale, Promise<Msgs>>()
-const rtl: ReadonlySet<Locale> = new Set([
-  'ar',
-  'arc',
-  'ckb',
-  'dv',
-  'fa',
-  'hbo',
-  'he',
-  'ks',
-  'ku',
-  'pal',
-  'phn',
-  'ps',
-  'sam',
-  'sd',
-  'syc',
-  'ug',
-  'ur',
-  'yi',
-])
+const rtl: ReadonlySet<Locale> = new Set(['ar', 'fa', 'he', 'ps', 'sd', 'ur', 'yi'])
 let reqNum: number = 0
 
 export function isLocaleRTL(code: Locale): boolean {
@@ -91,21 +71,48 @@ export async function setLocale(code: Locale): Promise<boolean> {
   if (id !== reqNum) return false
   curLocale.set(nxt)
   if (typeof document !== 'undefined') {
-    document.documentElement.lang = nxt
+    document.documentElement.lang = nxt === 'ns' ? 'nso' : nxt
     document.documentElement.dir = isLocaleRTL(nxt) ? 'rtl' : 'ltr'
     document.documentElement.dataset.locale = nxt
   }
-  try {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, nxt)
-  } catch {}
   return true
 }
 
-export function restoreLocale(): void {
-  try {
-    const saved: string | null = localStorage.getItem(STORAGE_KEY)
-    if (saved && supLocales.includes(saved)) void setLocale(saved).catch((): undefined => undefined)
-  } catch {}
+const browserAliases: Readonly<Record<string, Locale>> = {
+  fil: 'tl',
+  in: 'id',
+  iw: 'he',
+  ji: 'yi',
+  nb: 'no',
+  nn: 'no',
+  nso: 'ns',
+}
+
+export function matchBrowserLocale(languages: readonly string[]): Locale | undefined {
+  for (const language of languages) {
+    const normalized: string = language.trim().toLowerCase().replaceAll('_', '-')
+    const base: string = normalized.split('-', 1)[0] ?? normalized
+    for (const code of [normalized, base]) {
+      const candidate: Locale = browserAliases[code] ?? code
+      if (supLocales.includes(candidate)) return candidate
+    }
+  }
+  return undefined
+}
+
+export function initBrowserLocale(): () => void {
+  function browserLocale(): Locale | undefined {
+    return matchBrowserLocale([...navigator.languages, navigator.language])
+  }
+
+  function handleLanguageChange(): void {
+    const code: Locale | undefined = browserLocale()
+    if (code) void setLocale(code).catch((): undefined => undefined)
+  }
+
+  window.addEventListener('languagechange', handleLanguageChange)
+  void setLocale(browserLocale() ?? 'en').catch((): undefined => undefined)
+  return (): void => window.removeEventListener('languagechange', handleLanguageChange)
 }
 
 export { localeDisplayName } from './names.ts'

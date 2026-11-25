@@ -1,19 +1,14 @@
 name: GitHub Sites Gallery
 description: Deploy a preview gallery of sites deployed from and linked to public and private user and org repositories.
 branding:
-  icon: 'layout'
-  color: 'blue'
+  icon: "layout"
+  color: "blue"
 
 inputs:
-  gh_usernames:
-    description: Comma-separated GitHub usernames.
-    required: false
-    default: ''
-
   gh_pat:
     description: Optional GitHub PAT.
     required: false
-    default: ''
+    default: ""
 
 outputs:
   build-path:
@@ -44,7 +39,6 @@ runs:
       id: gallery
       uses: $/.github/actions/build-gallery
       with:
-        gh_usernames: ${{ inputs.gh_usernames }}
         gh_pat: ${{ inputs.gh_pat }}
 
     - name: Upload

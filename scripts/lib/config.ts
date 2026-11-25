@@ -1,4 +1,5 @@
 import { loadEnvFile } from 'node:process'
+import { readSiteConfig } from '#lib/server/site-config.ts'
 
 export type AuthMode = 'anonymous' | 'installation' | 'pat'
 
@@ -11,16 +12,16 @@ export interface AppConfig {
   readonly screenshotDelayMS: number
 }
 
-export function loadConfig(): AppConfig {
+export async function loadConfig(): Promise<AppConfig> {
   loadDotEnv()
 
+  const { usernames } = await readSiteConfig()
   const srcRepo: string | null = process.env.GITHUB_REPOSITORY ?? null
-  const configLogins: string[] = parseList(process.env.GH_USERNAMES)
+  const owner = process.env.GITHUB_REPOSITORY_OWNER?.trim() || srcRepo?.split('/')[0]?.trim()
+  const configLogins = parseLogins(usernames === undefined ? process.env.GH_USERNAMES : usernames)
   const ghPat: string = process.env.GH_PAT?.trim() || ''
   const installToken: string = process.env.GITHUB_TOKEN?.trim() || ''
-  const logins: string[] = unique(
-    configLogins.length ? configLogins : [srcRepo?.split('/')[0] || ''],
-  )
+  const logins = configLogins.length || !owner ? configLogins : [owner]
 
   return {
     logins,
@@ -30,7 +31,7 @@ export function loadConfig(): AppConfig {
     srcRepoUrl: srcRepo
       ? `${(process.env.GITHUB_SERVER_URL || 'https://github.com').replace(/\/+$/, '')}/${srcRepo}`
       : null,
-    screenshotDelayMS: posInt(process.env.SCREENSHOT_DELAY_MS, 10_000),
+    screenshotDelayMS: posInt(process.env.SCREENSHOT_DELAY_MS, 20_000),
   }
 }
 
@@ -42,15 +43,21 @@ function loadDotEnv(): void {
   }
 }
 
-function parseList(val: string | undefined): string[] {
-  return (val || '')
-    .split(/[\n,]/)
-    .map((item: string): string => item.trim())
-    .filter(Boolean)
-}
+function parseLogins(value: unknown): string[] {
+  if (value == null) return []
+  const names: unknown = typeof value === 'string' ? value.split(/[\n,]/) : value
+  if (!Array.isArray(names)) {
+    throw new Error('Expected "usernames" to be a list of names or a comma-separated string.')
+  }
 
-function unique(vals: readonly string[]): string[] {
-  return [...new Set(vals.filter(Boolean))]
+  const logins = new Map<string, string>()
+  for (const name of names) {
+    if (typeof name !== 'string') throw new Error('Each "usernames" entry must be a string.')
+    const login = name.trim()
+    const key = login.toLowerCase()
+    if (login && !logins.has(key)) logins.set(key, login)
+  }
+  return [...logins.values()]
 }
 
 function posInt(val: string | undefined, fb: number): number {

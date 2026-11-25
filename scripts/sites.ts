@@ -20,7 +20,7 @@ type SiteCandidate = { repo: Repo; site: ResSite }
 const SITES_OUTPUT: string = path.resolve('src/lib/data/sites.json')
 const METADATA_OUTPUT: string = path.resolve('src/lib/data/metadata.json')
 
-const config: AppConfig = loadConfig()
+const config: AppConfig = await loadConfig()
 const gh: GitHubAPI = new GitHubAPI(config)
 
 try {

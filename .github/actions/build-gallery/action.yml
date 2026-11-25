@@ -2,15 +2,14 @@ name: Build Sites Gallery
 description: Build the static GitHub sites gallery
 
 inputs:
-  gh_usernames:
-    description: Comma-separated GitHub usernames.
-    required: false
-    default: ''
-
   gh_pat:
     description: Optional GitHub PAT.
     required: false
-    default: ''
+    default: ""
+  is_reuse_translator:
+    description: Internal for reusing a compiled translator.
+    required: false
+    default: "false"
 
 outputs:
   build-path:
@@ -21,6 +20,14 @@ runs:
   using: composite
 
   steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+      with:
+        path: .gallery-config
+        sparse-checkout: /site.config.json
+        sparse-checkout-cone-mode: false
+        persist-credentials: false
+
     - name: Setup
       uses: actions/setup-node@v7
       with:
@@ -39,14 +46,116 @@ runs:
       working-directory: ${{ github.action_path }}/../../..
       run: npm run verify
 
+    - name: Translator conditional
+      id: is_translate
+      shell: bash
+      working-directory: ${{ github.action_path }}/../../..
+      env:
+        GALLERY_CONFIG_DIR: ${{ github.workspace }}/.gallery-config
+      run: |
+        if node --import tsx scripts/translate.ts --enabled; then
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "enabled=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Translator source
+      if: inputs.is_reuse_translator == 'true' && github.repository == 'profile-icons/github-sites-gallery' && github.event_name == 'push'
+      id: translator_key
+      shell: bash
+      working-directory: ${{ github.action_path }}/../../../scripts/translator
+      run: |
+        source_hash=$(find . -type f -not -path './target/*' -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)
+        echo "key=gallery-translator-v2-${RUNNER_OS}-${RUNNER_ARCH}-${ImageOS:-ubuntu24}-${source_hash}" >> "$GITHUB_OUTPUT"
+
+    - name: Translator release
+      if: inputs.is_reuse_translator == 'true' && github.repository == 'profile-icons/github-sites-gallery' && github.event_name == 'push'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+        BIN_DIR: ${{ runner.temp }}/gallery-translator-bin
+        TAG: ${{ steps.translator_key.outputs.key }}
+      run: |
+        archive_dir=$(mktemp -d "$RUNNER_TEMP/gallery-translator-download.XXXXXX")
+        trap 'rm -rf "$archive_dir"' EXIT
+        rm -rf "$BIN_DIR"
+        mkdir -p "$BIN_DIR"
+        if gh release download "$TAG" --pattern gallery-translator.tar.gz --dir "$archive_dir"; then
+          if ! tar -xzf "$archive_dir/gallery-translator.tar.gz" --no-same-owner -C "$BIN_DIR"; then
+            rm -rf "$BIN_DIR"
+            echo "Invalid translator archive; a new binary will be built."
+          fi
+        else
+          echo "No downloadable translator release; a new binary will be built."
+        fi
+
+    - name: Translator binary
+      if: inputs.is_reuse_translator == 'true' && github.repository == 'profile-icons/github-sites-gallery' && github.event_name == 'push'
+      id: translator
+      shell: bash
+      working-directory: ${{ github.action_path }}/../../..
+      env:
+        BIN_DIR: ${{ runner.temp }}/gallery-translator-bin
+      run: |
+        binary="$BIN_DIR/gallery-translator"
+        smoke_test() {
+          [[ -x "$binary" ]] && printf '[]' | LD_LIBRARY_PATH="$BIN_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" "$binary" >/dev/null
+        }
+        if smoke_test; then
+          echo "Using existing gallery translator binary."
+        else
+          echo "No usable released translator binary; compiling."
+          rustup toolchain install stable --profile minimal
+          rustup run stable cargo build --release --manifest-path scripts/translator/Cargo.toml --target-dir .cache/gallery-translator
+          release_dir="$PWD/.cache/gallery-translator/release"
+          rm -rf "$BIN_DIR"
+          mkdir -p "$BIN_DIR"
+          install -m 755 "$release_dir/gallery-translator" "$binary"
+          # Dereference symlinks so cached runtime libraries do not point at Cargo's build cache.
+          find "$release_dir" -maxdepth 1 -name '*.so*' -exec cp -L {} "$BIN_DIR/" \;
+          smoke_test
+          echo "built=true" >> "$GITHUB_OUTPUT"
+        fi
+        echo "path=$binary" >> "$GITHUB_OUTPUT"
+
+    - name: Translator publish
+      if: steps.translator.outputs.built == 'true' && inputs.is_reuse_translator == 'true' && github.repository == 'profile-icons/github-sites-gallery' && github.event_name == 'push'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+        BIN_DIR: ${{ runner.temp }}/gallery-translator-bin
+        TAG: ${{ steps.translator_key.outputs.key }}
+      run: |
+        archive_dir=$(mktemp -d "$RUNNER_TEMP/gallery-translator-upload.XXXXXX")
+        trap 'rm -rf "$archive_dir"' EXIT
+        archive="$archive_dir/gallery-translator.tar.gz"
+        tar -czf "$archive" -C "$BIN_DIR" .
+        if gh release view "$TAG" >/dev/null 2>&1; then
+          gh release upload "$TAG" "$archive" --clobber
+        else
+          gh release create "$TAG" "$archive" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --prerelease \
+            --latest=false
+        fi
+
     - name: Build
       shell: bash
       working-directory: ${{ github.action_path }}/../../..
       env:
-        GH_USERNAMES: ${{ inputs.gh_usernames }}
+        GALLERY_CONFIG_DIR: ${{ github.workspace }}/.gallery-config
+        GALLERY_TRANSLATOR_BIN: ${{ steps.translator.outputs.path }}
         GH_PAT: ${{ inputs.gh_pat }}
         GITHUB_TOKEN: ${{ github.token }}
-      run: npm run build:data
+      run: |
+        if [[ "${{ steps.is_translate.outputs.enabled }}" == "true" && -z "$GALLERY_TRANSLATOR_BIN" ]]; then
+          rustup toolchain install stable --profile minimal
+          export RUSTUP_TOOLCHAIN=stable
+        fi
+        npm run build:data
 
     - name: Output
       id: output

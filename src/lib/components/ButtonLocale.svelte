@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import { type Locale, locale, localeDisplayName, restoreLocale, setLocale, supLocales, t } from '#lib/i18n/index.ts'
+  import { type Locale, locale, localeDisplayName, setLocale, supLocales, t } from '#lib/i18n/index.ts'
 
   let dialog: HTMLDialogElement
   let search: string = ''
@@ -13,8 +12,6 @@
   $: displayNames = Object.fromEntries(supLocales.map((code: Locale): [Locale, string] => [code, localeDisplayName(code, $locale)]))
   $: query = norm(search)
   $: filtered = supLocales.filter((code: Locale): boolean => norm(`${displayNames[code]} ${code}`).includes(query))
-
-  onMount(restoreLocale)
 
   function norm(val: string): string {
     return val.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim()
@@ -85,7 +82,7 @@
       <div class="locale-grid" translate="no">
         {#each filtered as code (code)}
           <button class:selected={code === $locale} type="button" aria-pressed={code === $locale} onclick={(): Promise<void> => choose(code)}>
-            <span lang={code}>{displayNames[code]}</span>
+            <span lang={code === 'ns' ? 'nso' : code}>{displayNames[code]}</span>
             <small dir="ltr">{code.toUpperCase()}</small>
           </button>
         {/each}
@@ -96,7 +93,7 @@
 </dialog>
 
 <style>
-  .locale-trigger { width: auto; min-width: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 0 7px; white-space: nowrap; }
+  .locale-trigger { width: 64px; min-width: 64px; flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 0 7px; white-space: nowrap; }
   .locale-trigger svg { width: 17px; height: 17px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .locale-trigger span { font-size: 11px; line-height: 1; font-weight: 800; letter-spacing: .035em; }
   .locale-dialog {

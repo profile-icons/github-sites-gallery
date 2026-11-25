@@ -20,6 +20,80 @@
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">
-    <div style="display: contents">%sveltekit.body%</div>
+    <div style="display: contents;">%sveltekit.body%</div>
+    <script>
+    function observeHeaderFit() {
+      const layout = document.querySelector('.header-layout')
+      if (!layout) return false
+
+      function fit() {
+        const brand = layout.querySelector('.brand')
+        const title = brand?.querySelector('h1')
+        const avatar = brand?.querySelector('.brand-avatar-link')
+        const actions = layout.querySelector('.header-actions')
+        if (!brand || !title || !avatar || !actions) return
+
+        const width = layout.getBoundingClientRect().width
+        if (!width) return
+        const range = document.createRange()
+        range.selectNodeContents(title)
+        const titleWidth = range.getBoundingClientRect().width
+        const brandGap = parseFloat(getComputedStyle(brand).columnGap)
+        const brandWidth =
+          Math.ceil(titleWidth + avatar.getBoundingClientRect().width + brandGap) + 1
+        const actionWidth = Math.ceil(actions.getBoundingClientRect().width)
+        const links = layout.querySelector('.site-links')
+        const linkCount = links?.children.length ?? 0
+        const linkWidth = linkCount ? linkCount * 40 - 6 : 0
+        const style = getComputedStyle(layout)
+        const toolbarMin = parseFloat(style.getPropertyValue('--header-toolbar-min')) || 176
+        const inlineGap = parseFloat(style.getPropertyValue('--header-inline-gap')) || 8
+        const stackedGap = parseFloat(style.getPropertyValue('--header-stacked-gap')) || 12
+        const inlineWidth =
+          brandWidth + actionWidth + linkWidth + toolbarMin + (linkCount ? 3 : 2) * inlineGap
+        const centeredWidth = linkWidth + 2 * (Math.max(brandWidth, actionWidth) + stackedGap)
+        const mode =
+          !matchMedia('(max-width: 520px)').matches && width >= inlineWidth
+            ? 'inline'
+            : linkCount && width >= centeredWidth
+              ? 'centered'
+              : 'stacked'
+
+        const brandSize = `${brandWidth}px`
+        if (layout.style.getPropertyValue('--header-brand-width') !== brandSize) {
+          layout.style.setProperty('--header-brand-width', brandSize)
+        }
+        const actionSize = `${actionWidth}px`
+        if (layout.style.getPropertyValue('--header-actions-width') !== actionSize) {
+          layout.style.setProperty('--header-actions-width', actionSize)
+        }
+        if (layout.dataset.headerMode !== mode) layout.dataset.headerMode = mode
+      }
+
+      fit()
+      const resize = new ResizeObserver(fit)
+      resize.observe(layout)
+      const actions = layout.querySelector('.header-actions')
+      if (actions) resize.observe(actions)
+      const avatar = layout.querySelector('.brand-avatar-link')
+      if (avatar) resize.observe(avatar)
+      new MutationObserver(fit).observe(layout, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+      })
+      window.addEventListener('resize', fit)
+      document.fonts?.ready.then(fit)
+      document.fonts?.addEventListener('loadingdone', fit)
+      return true
+    }
+
+    if (!observeHeaderFit()) {
+      const observer = new MutationObserver(() => {
+        if (observeHeaderFit()) observer.disconnect()
+      })
+      observer.observe(document.body, { childList: true, subtree: true })
+    }
+    </script>
   </body>
 </html>

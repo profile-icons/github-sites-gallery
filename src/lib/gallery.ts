@@ -1,4 +1,4 @@
-import Fuse, { type FuseResult } from 'fuse.js'
+import Fuse from 'fuse.js'
 import type {
   FilterSort,
   Lang,
@@ -40,7 +40,7 @@ export function traffic({ trafficViews, trafficClones }: Site): number | null {
   return Number.isFinite(ttl) ? ttl : null
 }
 
-export function createSiteSearch(sites: readonly Site[]): Fuse<Site> {
+export function createSiteSearch(sites: readonly Site[], locale = 'en'): Fuse<Site> {
   return new Fuse([...sites], {
     threshold: 0.3,
     ignoreLocation: true,
@@ -48,6 +48,7 @@ export function createSiteSearch(sites: readonly Site[]): Fuse<Site> {
       { name: 'fullName', weight: 3.4 },
       { name: 'name', weight: 3 },
       { name: 'description', weight: 2 },
+      { name: `descriptionTranslations.${locale}`, weight: 2 },
       { name: 'topics', weight: 1.6 },
       { name: 'languages.name', weight: 1.2 },
     ],
@@ -86,9 +87,7 @@ export function filterSites(
   selectedLangs: readonly string[],
   selectedTopics: readonly string[],
 ): Site[] {
-  let res: Site[] = query.trim()
-    ? search.search(query.trim()).map(({ item }: FuseResult<Site>): Site => item)
-    : [...sites]
+  let res: Site[] = query.trim() ? search.search(query.trim()).map(({ item }) => item) : [...sites]
 
   if (selectedLangs.length) {
     res = res.filter((site: Site): boolean =>

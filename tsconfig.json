@@ -13,10 +13,5 @@
     "allowUnreachableCode": false,
     "allowUnusedLabels": false
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.svelte",
-    "scripts/**/*.ts",
-    "vite.config.ts"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.svelte", "scripts/**/*.ts", "vite.config.ts"]
 }

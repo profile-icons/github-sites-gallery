@@ -1,6 +1,6 @@
 <script lang="ts">
   import { asset } from '$app/paths'
-  import { t } from '#lib/i18n/index.ts'
+  import { locale, t } from '#lib/i18n/index.ts'
   import { onMount, tick } from 'svelte'
   import type { Lang, Site } from '#lib/types.ts'
   import LockIcon from './icons/LockIcon.svelte'
@@ -29,7 +29,7 @@
   $: nameSeparator = site.fullName.lastIndexOf('/')
   $: repoOwner = nameSeparator >= 0 ? site.fullName.slice(0, nameSeparator) : ''
   $: repoName = site.fullName.slice(nameSeparator + 1)
-  $: summary = site.description || $t('noDescription')
+  $: summary = site.descriptionTranslations?.[$locale] || site.description || $t('noDescription')
   $: initials = site.name
     .split(/[-_\s]+/)
     .filter(Boolean)
@@ -113,7 +113,7 @@
       {/if}
     </div>
 
-    <p>{summary}</p>
+    <p dir="auto">{summary}</p>
 
     <div class="card-meta">
       <div bind:this={langRow} class="meta-row" aria-label={$t('languages')}>

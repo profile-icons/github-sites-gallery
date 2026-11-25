@@ -8,7 +8,7 @@ import { mapConcurr } from './lib/site'
 const SITES_FILE: string = path.resolve('src/lib/data/sites.json')
 const SCREENSHOTS_DIR: string = path.resolve('static/screenshots')
 const SCREENSHOT_CONCURR: number = 3
-const { screenshotDelayMS }: AppConfig = loadConfig()
+const { screenshotDelayMS }: AppConfig = await loadConfig()
 const sites: Site[] = parseSites(await readFile(SITES_FILE, 'utf8'))
 let capturedCount: number = 0
 
@@ -53,7 +53,7 @@ async function capture(browser: Browser, site: Site): Promise<boolean> {
   try {
     const res: Response | null = await page.goto(site.siteUrl, {
       waitUntil: 'domcontentloaded',
-      timeout: 25_000,
+      timeout: 60_000,
     })
     if (res?.status() === 404) {
       await removeIfPresent(outPath)

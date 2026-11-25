@@ -20,6 +20,7 @@ export interface Site {
   readonly name: string
   readonly fullName: string
   readonly description: string
+  readonly descriptionTranslations?: Readonly<Record<string, string>>
   readonly repoUrl: string
   readonly siteUrl: string
   readonly isPrivate: boolean
@@ -47,6 +48,14 @@ export interface Profile {
 export interface GalleryMetadata {
   readonly profile: Profile
   readonly srcRepoUrl: string | null
+}
+
+export interface SiteLink {
+  readonly name: string
+  readonly url: string
+  readonly label: string
+  readonly viewBox: string
+  readonly iconBody: string
 }
 
 export interface SortOption {

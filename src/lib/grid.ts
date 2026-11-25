@@ -18,6 +18,10 @@ export function getGridSize(width: number, height: number, siteCount: number): G
     Math.floor((height + GRID_GAP) / (CARD_TARGET_HEIGHT + GRID_GAP)),
   )
 
+  if (siteCount > 0 && (siteCount <= 2 || siteCount <= fittedCols)) {
+    return { cols: Math.min(siteCount, fittedCols), rows: 1 }
+  }
+
   const preferredCols: 2 | 3 = siteCount <= 4 ? 2 : 3
   const useCompactGrid: boolean =
     siteCount > 0 && siteCount <= 6 && fittedCols >= preferredCols && fittedRows >= 2

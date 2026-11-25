@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import type Fuse from 'fuse.js'
-  import { t } from '#lib/i18n/index.ts'
+  import { locale, t } from '#lib/i18n/index.ts'
   import ButtonLocale from './ButtonLocale.svelte'
   import { getGridSize, type GridSize } from '#lib/grid.ts'
   import {
@@ -18,6 +18,7 @@
     GalleryMetadata,
     SecondarySortKey,
     Site,
+    SiteLink,
     SortDir,
     SortKey,
     SortOption,
@@ -25,11 +26,14 @@
   } from '#lib/types.ts'
   import Filter from './Filter.svelte'
   import SiteCard from './SiteCard.svelte'
+  import SiteLinks from './SiteLinks.svelte'
   import Sort from './Sort.svelte'
   import Octicon from './icons/Octicon.svelte'
 
   export let sites: readonly Site[] = []
   export let metadata: GalleryMetadata
+  export let titleName: string
+  export let siteLinks: readonly SiteLink[] = []
 
   let query: string = ''
   let selectedLangs: string[] = []
@@ -46,7 +50,8 @@
   let lastFilterKey: string = ''
   let theme: Theme = 'dark'
 
-  const search: Fuse<Site> = createSiteSearch(sites)
+  let search: Fuse<Site>
+  $: search = createSiteSearch(sites, $locale)
   const languageScores: ReadonlyMap<string, number> = langUseScores(sites)
 
   let langs: string[]
@@ -87,6 +92,7 @@
     curPage = 1
   }
   $: if (curPage > pageCount) curPage = pageCount
+  $: if (gridShell && filteredSites) measureGrid(filteredSites.length)
 
   function setLangs(val: string[]): void {
     selectedLangs = val
@@ -107,15 +113,16 @@
     sortDir = val
   }
 
-  function measureGrid(): void {
+  function measureGrid(siteCount: number): void {
     if (!gridShell) return
 
     const prevPageSize: number = Math.max(1, cols * rows)
     const firstVisIdx: number = (curPage - 1) * prevPageSize
+    const padding = getComputedStyle(gridShell)
     const { cols: nxtCols, rows: nxtRows }: GridSize = getGridSize(
-            gridShell.clientWidth,
-            gridShell.clientHeight,
-            sites.length,
+            gridShell.clientWidth - parseFloat(padding.paddingLeft) - parseFloat(padding.paddingRight),
+            gridShell.clientHeight - parseFloat(padding.paddingTop) - parseFloat(padding.paddingBottom),
+            siteCount,
     )
     const nxtPageSize: number = Math.max(1, nxtCols * nxtRows)
 
@@ -157,97 +164,102 @@
             || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
     theme = initTheme === 'light' ? 'light' : 'dark'
 
-    measureGrid()
-    const resizeObs: ResizeObserver = new ResizeObserver(measureGrid)
+    const resize = (): void => measureGrid(filteredSites.length)
+    resize()
+    const resizeObs: ResizeObserver = new ResizeObserver(resize)
     if (gridShell) resizeObs.observe(gridShell)
-    window.addEventListener('orientationchange', measureGrid)
+    window.addEventListener('orientationchange', resize)
 
     return (): void => {
       resizeObs.disconnect()
-      window.removeEventListener('orientationchange', measureGrid)
+      window.removeEventListener('orientationchange', resize)
     }
   })
 </script>
 
 <main class="app-shell">
   <header class="topbar">
-    <div class="brand">
-      <a
-              class="brand-avatar-link"
-              href={metadata.profile.profileUrl}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={$t('openGithub', { name: profileName })}
-      >
-        <img class="brand-avatar" src={metadata.profile.avatarUrl} alt="" width="34" height="34" />
-      </a>
-      <div>
-        <h1>{$t('pageTitle', { name: profileName })}</h1>
-        <span>{$t('deployed', { count: sites.length })}</span>
-      </div>
-    </div>
-
-    <div class="header-actions">
-      <button
-              type="button"
-              class="header-icon-button"
-              aria-label={$t(theme === 'dark' ? 'switchLight' : 'switchDark')}
-              title={$t(theme === 'dark' ? 'lightMode' : 'darkMode')}
-              onclick={toggleTheme}
-      >
-        <Octicon name={theme === 'dark' ? 'sun' : 'moon'} />
-      </button>
-      <ButtonLocale />
-
-      {#if metadata.srcRepoUrl}
+    <div class="header-layout">
+      <div class="brand">
         <a
-                class="header-icon-button"
-                href={metadata.srcRepoUrl}
+                class="brand-avatar-link"
+                href={metadata.profile.profileUrl}
                 target="_blank"
                 rel="noreferrer"
-                aria-label={$t('openSource')}
-                title={$t('githubRepository')}
+                aria-label={$t('openGithub', { name: profileName })}
         >
-          <Octicon name="mark-github" />
+          <img class="brand-avatar" src={metadata.profile.avatarUrl} alt="" width="34" height="34" />
         </a>
-      {/if}
+        <div>
+          <h1>{$t('pageTitle', { name: titleName })}</h1>
+          <span>{$t('deployed', { count: sites.length })}</span>
+        </div>
+      </div>
+
+      <SiteLinks links={siteLinks} />
+
+      <section class="toolbar" aria-label={$t('toolbar')}>
+        <label class="search-box">
+          <span aria-hidden="true">⌕</span>
+          <input bind:value={query} type="search" placeholder={$t('searchSitesPlaceholder')} aria-label={$t('searchSites')} />
+          {#if query}
+            <button type="button" class="input-clear" aria-label={$t('clearSearch')} onclick={(): string => (query = '')}>×</button>
+          {/if}
+        </label>
+
+        <div class="toolbar-actions">
+          <Filter
+                  {langs}
+                  topics={availTopics}
+                  {selectedLangs}
+                  {selectedTopics}
+                  sort={filterSort}
+                  onSortChange={(val: FilterSort): FilterSort => (filterSort = val)}
+                  onLangsChange={setLangs}
+                  onTopicsChange={setTopics}
+          />
+          <Sort
+                  options={sortOptions}
+                  primary={primarySort}
+                  secondary={secondarySort}
+                  onPrimaryChange={setPrimary}
+                  onSecondaryChange={setSecondary}
+                  dir={sortDir}
+                  onDirChange={setDir}
+          />
+          {#if activeFilterCount || query}
+            <button type="button" class="clear-compact" onclick={clearAll} aria-label={$t('clearAll')}>×</button>
+          {/if}
+        </div>
+      </section>
+
+      <div class="header-actions">
+        <button
+                type="button"
+                class="header-icon-button"
+                aria-label={$t(theme === 'dark' ? 'switchLight' : 'switchDark')}
+                title={$t(theme === 'dark' ? 'lightMode' : 'darkMode')}
+                onclick={toggleTheme}
+        >
+          <Octicon name={theme === 'dark' ? 'sun' : 'moon'} />
+        </button>
+        <ButtonLocale />
+
+        {#if metadata.srcRepoUrl}
+          <a
+                  class="header-icon-button"
+                  href={metadata.srcRepoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={$t('openSource')}
+                  title={$t('githubRepository')}
+          >
+            <Octicon name="mark-github" />
+          </a>
+        {/if}
+      </div>
     </div>
   </header>
-
-  <section class="toolbar" aria-label={$t('toolbar')}>
-    <label class="search-box">
-      <span aria-hidden="true">⌕</span>
-      <input bind:value={query} type="search" placeholder={$t('searchSitesPlaceholder')} aria-label={$t('searchSites')} />
-      {#if query}
-        <button type="button" class="input-clear" aria-label={$t('clearSearch')} onclick={(): string => (query = '')}>×</button>
-      {/if}
-    </label>
-
-    <div class="toolbar-actions">
-      <Filter
-              {langs}
-              topics={availTopics}
-              {selectedLangs}
-              {selectedTopics}
-              sort={filterSort}
-              onSortChange={(val: FilterSort): FilterSort => (filterSort = val)}
-              onLangsChange={setLangs}
-              onTopicsChange={setTopics}
-      />
-      <Sort
-              options={sortOptions}
-              primary={primarySort}
-              secondary={secondarySort}
-              onPrimaryChange={setPrimary}
-              onSecondaryChange={setSecondary}
-              dir={sortDir}
-              onDirChange={setDir}
-      />
-      {#if activeFilterCount || query}
-        <button type="button" class="clear-compact" onclick={clearAll} aria-label={$t('clearAll')}>×</button>
-      {/if}
-    </div>
-  </section>
 
   <section bind:this={gridShell} class="grid-shell" style:visibility={isGridReady ? 'visible' : 'hidden'}>
     {#if pageSites.length}

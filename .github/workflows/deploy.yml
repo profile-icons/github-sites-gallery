@@ -8,7 +8,7 @@ on:
       - README.md
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *'
+    - cron: "0 2 * * *"
 
 permissions:
   contents: read
@@ -21,7 +21,11 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
 
     steps:
       - name: Config
@@ -41,8 +45,8 @@ jobs:
         id: gallery
         uses: $/.github/actions/build-gallery
         with:
-          gh_usernames: ${{ secrets.GH_USERNAMES }}
           gh_pat: ${{ secrets.GH_PAT }}
+          is_reuse_translator: ${{ github.event_name == 'push' }}
 
       - name: Upload
         uses: actions/upload-pages-artifact@v5

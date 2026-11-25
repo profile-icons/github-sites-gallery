@@ -1,9 +1,28 @@
 <script lang="ts">
-  import { t } from '#lib/i18n/index.ts'
+  import { onMount } from 'svelte'
   import Gallery from '#lib/components/Gallery.svelte'
   import { metadata, sites } from '#lib/data/index.ts'
+  import { t } from '#lib/i18n/index.ts'
+  import type { PageProps } from './$types'
 
-  const titleName = metadata.profile.name || metadata.profile.login || 'GitHub'
+  let { data }: PageProps = $props()
+  const titleName = $derived(data.name || metadata.profile.name || metadata.profile.login || 'GitHub')
+
+  onMount(() => {
+    if (!data.gaId) return
+    const analytics = window as Window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void }
+    const dataLayer = (analytics.dataLayer ??= [])
+    function gtag(..._args: unknown[]): void {
+      dataLayer.push(arguments)
+    }
+    analytics.gtag = gtag
+    gtag('js', new Date())
+    gtag('config', data.gaId)
+    const script = document.createElement('script')
+    script.async = true
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(data.gaId)}`
+    document.head.append(script)
+  })
 </script>
 
 <svelte:head>
@@ -13,4 +32,4 @@
   <meta name="theme-color" content="#0c0e12" />
 </svelte:head>
 
-<Gallery {sites} {metadata} />
+<Gallery {sites} {metadata} {titleName} siteLinks={data.siteLinks} />

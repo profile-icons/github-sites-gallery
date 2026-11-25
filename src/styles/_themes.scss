@@ -63,14 +63,6 @@ html[data-theme="light"] {
     color: #656d76;
   }
 
-  .control-button:hover,
-  .header-icon-button:hover,
-  .pager button:hover:not(:disabled) {
-    border-color: #afb8c1;
-    background: #f3f4f6;
-    color: #1f2328;
-  }
-
   .popover-panel {
     border-color: #d0d7de;
     background: #ffffff;
@@ -102,16 +94,6 @@ html[data-theme="light"] {
     border-color: #d0d7de;
     background: #f6f8fa;
     color: #424a53;
-
-    &:hover {
-      border-color: #afb8c1;
-    }
-
-    &.selected {
-      border-color: #0969da;
-      background: #ddf4ff;
-      color: #0550ae;
-    }
   }
 
   .sort-field select {
@@ -126,14 +108,34 @@ html[data-theme="light"] {
 
     button {
       color: #656d76;
-      &:hover {
-        color: #1f2328;
-      }
-      &.active {
-        background: #eef1f4;
-        color: #1f2328;
-      }
     }
+  }
+
+  .choice-cloud button:hover {
+    border-color: #afb8c1;
+  }
+
+  .choice-cloud button.selected {
+    border-color: #0969da;
+    background: #ddf4ff;
+    color: #0550ae;
+  }
+
+  .sort-direction button:hover {
+    color: #1f2328;
+  }
+
+  .sort-direction button.active {
+    background: #eef1f4;
+    color: #1f2328;
+  }
+
+  .control-button:hover,
+  .header-icon-button:hover,
+  .pager button:hover:not(:disabled) {
+    border-color: #afb8c1;
+    background: #f3f4f6;
+    color: #1f2328;
   }
 
   .site-card {
